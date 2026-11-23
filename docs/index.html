@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>《謎魅狩獵》Mimesis 戰術生存應對指南 | 教學簡報</title>
+  <style>
+    :root {
+      --bg-dark: #080c12;
+      --bg-card: #0f1622;
+      --bg-card-hover: #162032;
+      --border-hud: #1d2c42;
+      --accent-cyan: #00f0ff;
+      --accent-green: #00ff88;
+      --accent-red: #ff3366;
+      --accent-amber: #ffaa00;
+      --accent-purple: #a855f7;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --font-mono: "Cascadia Code", Consolas, "Courier New", monospace;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Background HUD Grid Scanline */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: 
+        linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Top HUD Header */
+    header {
+      height: 60px;
+      border-bottom: 1px solid var(--border-hud);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: rgba(15, 22, 34, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      color: var(--accent-cyan);
+    }
+
+    .brand-badge {
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid var(--accent-cyan);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+
+    .hud-status {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent-green);
+      display: inline-block;
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    /* Presentation Deck Container */
+    #deck-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      z-index: 5;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 36px 60px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(30px);
+      transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    /* Slide Titles & Headers */
+    .slide-header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid var(--border-hud);
+      padding-bottom: 12px;
+    }
+
+    .slide-title-wrap h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .slide-subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .danger-tag {
+      font-size: 0.9rem;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .danger-extreme { background: rgba(255, 51, 102, 0.2); border: 1px solid var(--accent-red); color: var(--accent-red); }
+    .danger-high { background: rgba(255, 170, 0, 0.2); border: 1px solid var(--accent-amber); color: var(--accent-amber); }
+    .danger-medium { background: rgba(0, 240, 255, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); }
+    .danger-low { background: rgba(0, 255, 136, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); }
+
+    /* Monster 3-Column Tactical Cards Grid */
+    .tactical-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 10px;
+    }
+
+    .t-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hud);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .t-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+
+    .card-header {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+    }
+
+    .card-header.attack { color: var(--accent-red); }
+    .card-header.evasion { color: var(--accent-green); }
+    .card-header.counter { color: var(--accent-cyan); }
+
+    .t-card ul {
+      list-style-type: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .t-card li {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    .t-card strong {
+      color: #fff;
+    }
+
+    /* Field Note Box */
+    .field-note-box {
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: rgba(168, 85, 247, 0.08);
+      border-left: 4px solid var(--accent-purple);
+      border-radius: 0 6px 6px 0;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .field-note-box strong { color: #d8b4fe; }
+
+    /* Threat Matrix Table Style */
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+
+    .matrix-table th {
+      background: #131c2d;
+      color: var(--accent-cyan);
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--border-hud);
+      font-family: var(--font-mono);
+    }
+
+    .matrix-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-hud);
+      line-height: 1.5;
+    }
+
+    .matrix-table tr:hover td {
+      background: rgba(0, 240, 255, 0.05);
+    }
+
+    /* Bottom HUD Controls */
+    footer {
+      height: 60px;
+      border-top: 1px solid var(--border-hud);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: rgba(15, 22, 34, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button.hud-btn {
+      background: #162032;
+      border: 1px solid var(--border-hud);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    button.hud-btn:hover {
+      background: var(--accent-cyan);
+      color: #000;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    .progress-bar-wrap {
+      flex: 1;
+      max-width: 400px;
+      margin: 0 24px;
+      height: 6px;
+      background: #162032;
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .counter-display {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--accent-cyan);
+      min-width: 90px;
+      text-align: right;
+    }
+
+    /* Quick Index Drawer */
+    #index-drawer {
+      position: fixed;
+      right: -320px;
+      top: 60px;
+      width: 320px;
+      height: calc(100vh - 120px);
+      background: #0d1420;
+      border-left: 1px solid var(--border-hud);
+      z-index: 100;
+      transition: right 0.3s ease;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+    }
+
+    #index-drawer.open { right: 0; }
+
+    .drawer-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 16px;
+      font-family: var(--font-mono);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .drawer-item {
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .drawer-item:hover, .drawer-item.active {
+      background: rgba(0, 240, 255, 0.15);
+      color: #fff;
+    }
+
+    .kbd {
+      background: #1e293b;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      border: 1px solid #334155;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <span>MIMESIS TACTICAL HUD</span>
+      <span class="brand-badge">VER 0.3.0</span>
+    </div>
+    <div class="hud-status">
+      <span><span class="status-dot"></span> 系統在線 | 知識庫編譯產物</span>
+      <span class="kbd">F: 全螢幕</span>
+      <span class="kbd">←/→: 切頁</span>
+    </div>
+  </header>
+
+  <!-- Presentation Main Area -->
+  <main id="deck-container">
+
+    <!-- Slide 1: 總綱 -->
+    <section class="slide active">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>《謎魅狩獵》戰術應對總綱</h2>
+          <div class="slide-subtitle">TACTICAL SURVIVAL BRIEFING // MIMESIS CONTAINMENT PROTOCOL</div>
+        </div>
+        <span class="danger-tag danger-medium">戰術總則</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 原則一：辨識與破綻洞察</div>
+          <ul>
+            <li><strong>動態行為偽裝</strong>：0.3.0 更新後怪物具備跳舞、上車放廢料、假藥水等高階社交欺詐。</li>
+            <li><strong>聲響感官雙刃劍</strong>：部分怪物怕巨響（野蠻兔），部分怪物對噪音極度暴怒（指揮家）。</li>
+            <li><strong>視線凝視制約</strong>：高危目標具備「看著即止步」的凝視機制（哨兵）。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 原則二：避戰為最高準則</div>
+          <ul>
+            <li><strong>彈藥零收益原則</strong>：在《謎魅狩獵》中，擊殺怪物通常<strong>不掉落戰利品</strong>。</li>
+            <li><strong>體力即生命</strong>：面對自爆魔等威脅，預留耐力狂奔是唯一解，嚴禁隨意耗盡體力。</li>
+            <li><strong>地形卡位機制</strong>：面對高血量重裝坦克（Heavy D），利用複雜轉角卡怪後撤離。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 原則三：精準反擊與破招</div>
+          <ul>
+            <li><strong>霰彈槍經濟學</strong>：霰彈槍是救急保險，優先保留給哨兵、迫近的炸彈魔與假人。</li>
+            <li><strong>硬直破招窗口</strong>：利用紳士貓頭鷹旋轉後的停頓、雙槍羊瞄準定格進行反殺。</li>
+            <li><strong>團隊拆解連攜</strong>：一人吸引/凝視，一人繞背遠程處決。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>戰術教官指引：</strong> 本手冊匯整 10 隻核心 Mimesis 實體情報。請點擊下方導航或按 <span class="kbd">→</span> 鍵依序瀏覽各實體專題！
+      </div>
+    </section>
+
+    <!-- Slide 2: 全威脅矩陣 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>全實體威脅矩陣 (Threat Matrix)</h2>
+          <div class="slide-subtitle">10 ENTITIES DANGER LEVEL & TACTICAL COMPARISON</div>
+        </div>
+        <span class="danger-tag danger-high">情報速查</span>
+      </div>
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th>名稱 (中/英)</th>
+            <th>危險等級</th>
+            <th>攻擊特徵</th>
+            <th>核心避戰 SOP</th>
+            <th>最佳反制 / 彈藥消耗</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Mimesis 模仿者</strong></td>
+            <td><span class="danger-tag danger-high">★★★★☆</span></td>
+            <td>掐脖高感染(50-80%)、複製物品欄武器反打</td>
+            <td>確認身分後立即全速狂奔拉開</td>
+            <td>霰彈槍 1 發 / 搖滾球棒 2 下</td>
+          </tr>
+          <tr>
+            <td><strong>Bombesis 炸彈魔</strong></td>
+            <td><span class="danger-tag danger-high">★★★★☆</span></td>
+            <td>倒數逼逼聲、區域致命自爆</td>
+            <td>保留滿體力，聽逼逼聲拔腿狂奔</td>
+            <td>遠程霰彈槍 1 發 (嚴禁近戰)</td>
+          </tr>
+          <tr>
+            <td><strong>Brute Bunny 野蠻兔</strong></td>
+            <td><span class="danger-tag danger-medium">★★★☆☆</span></td>
+            <td>高速衝刺敲擊，兩下致命</td>
+            <td><strong>開麥大聲說話 / 尖叫嚇跑</strong></td>
+            <td>霰彈槍 3 發內收走</td>
+          </tr>
+          <tr>
+            <td><strong>Mama Monkey 猴子媽媽</strong></td>
+            <td><span class="danger-tag danger-low">★★☆☆☆</span></td>
+            <td>抓人拖至出口、武器化假人砸人</td>
+            <td>隊友普通敲 1 下立即中斷救援</td>
+            <td>霰彈槍 1 發 / 球棒 3 下</td>
+          </tr>
+          <tr>
+            <td><strong>Quakka Glider 矮袋鼯鼠</strong></td>
+            <td><span class="danger-tag danger-low">★★☆☆☆</span></td>
+            <td>飛撲遮擋全屏視野、語音完全消音</td>
+            <td>靠牆閃避，防範炸彈魔連鎖</td>
+            <td>球棒精準揮擊 1 下擊落</td>
+          </tr>
+          <tr>
+            <td><strong>Standing Owl 紳士貓頭鷹</strong></td>
+            <td><span class="danger-tag danger-medium">★★★☆☆</span></td>
+            <td>羽翼高速旋轉，一巴掌扇死</td>
+            <td>保持 3 米間距直接繞過 (不惹不動)</td>
+            <td>旋轉空窗期球棒 2 下 / 霰彈 1 發</td>
+          </tr>
+          <tr>
+            <td><strong>Maegoostro 沉默指揮家</strong></td>
+            <td><span class="danger-tag danger-low">★★☆☆☆</span></td>
+            <td>指揮棒敲頭 (對聲音極度敏感)</td>
+            <td><strong>全體閉嘴、收起響聲裝備</strong></td>
+            <td>直接正面扁，霰彈槍 2 發</td>
+          </tr>
+          <tr>
+            <td><strong>Heavy D 海維·D</strong></td>
+            <td><span class="danger-tag danger-high">★★★★☆</span></td>
+            <td>坦克衝撞：物品掉落 + 扣 50% 血</td>
+            <td>引導至障礙卡位後脫身</td>
+            <td><strong>絕對不要打！</strong> (耗 6 霰彈零收益)</td>
+          </tr>
+          <tr>
+            <td><strong>Sentryper 哨兵</strong></td>
+            <td><span class="danger-tag danger-extreme">★★★★★</span></td>
+            <td>雙骨鐮鬼魅突進，一刀必殺</td>
+            <td><strong>雙眼全程凝視注視，倒退後撤</strong></td>
+            <td>雙人配合：一人盯防，一人遠程 2 霰彈</td>
+          </tr>
+          <tr>
+            <td><strong>Ramblam 雙槍羊</strong></td>
+            <td><span class="danger-tag danger-low">★★☆☆☆</span></td>
+            <td>衝刺後定點長時間瞄準射擊</td>
+            <td>門口卡位時誘導其瞄準後變向脫逃</td>
+            <td>瞄準定格硬直時直接全力反殺</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Slide 3: Mimesis -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>01. Mimesis (模仿者 / 假人)</h2>
+          <div class="slide-subtitle">THE MIMIC // SOCIAL DECEPTION & WEAPON HIJACKER</div>
+        </div>
+        <span class="danger-tag danger-high">危險度 ★★★★☆</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>致命掐頸</strong>：近距離施加 50% ~ 80% 巨量感染條。</li>
+            <li><strong>物品欄武裝鏡像（複製機制）</strong>：極度危險！它會直接<strong>複製玩家的四格物品欄</strong>；只要背包內有武器，無論手持為何，它都能<strong>掏出同款武器打你</strong>（非搶走你手中的武器）！</li>
+            <li><strong>死者附身</strong>：隊友死亡後，假人能短暫附身其屍體繼續語音說話。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>識破破綻</strong>：0.3.0 改版後會跑跳、唱歌跳舞、上車放廢料、丟假藥水。語音對答不自然者立即警惕。</li>
+            <li><strong>唯快不破</strong>：一旦確認為假人，<strong>「跑，直接跑！」</strong>，絕不逗留。</li>
+            <li><strong>物資防護</strong>：未持有重火力時，切勿在背包留存高殺傷武器貼近它。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>霰彈槍 (最高性價比)</strong>：近距離 <strong>1 發直接秒殺</strong>。</li>
+            <li><strong>搖滾球棒</strong>：連續 <strong>2 下重擊</strong> 擊斃。</li>
+            <li><strong>普通球棒</strong>：需命中 <strong>3 下</strong>（防範被其掏出複製武器反打）。</li>
+            <li><strong>團隊 SOP</strong>：一人保持距離正面牽制，隊友側翼 1 槍霰彈處決。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 看到隊友熱情遞上「治療藥水」，或在載具上詭異跳舞時，切記暗號確認，切莫輕易靠近！
+      </div>
+    </section>
+
+    <!-- Slide 4: Bombesis -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>02. Bombesis (炸彈魔)</h2>
+          <div class="slide-subtitle">BOMBER MIMIC // TICKING TIME-BOMB</div>
+        </div>
+        <span class="danger-tag danger-high">危險度 ★★★★☆</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>全域即死自爆</strong>：接近玩家後啟動引信倒數，倒數結束產生毀滅性範圍爆炸。</li>
+            <li><strong>威脅判定</strong>：近距離無差別秒殺，波及周邊所有隊友與掩體。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>保留體力是唯一生存法規</strong>：平時搜刮切勿隨意耗盡耐力。</li>
+            <li><strong>聞聲即狂奔</strong>：靠近時會發出急促的<strong>「逼逼逼——」</strong>聲，一旦響起立刻調頭用盡體力狂奔！</li>
+            <li><strong>必死特性</strong>：只要你拉開安全距離，它倒數完畢後<strong>一定會自己炸死</strong>，無傷通關。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>嚴禁近戰肉搏</strong>：任何近戰攻擊必定遭自爆波及同歸於盡。</li>
+            <li><strong>遠程提前引爆</strong>：窄道無法避開時，使用<strong>霰彈槍 1 發遠程擊殺</strong>。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 其實這隻最好處理！只要記住：聽到逼逼聲立刻跑，讓他自己炸死即可。
+      </div>
+    </section>
+
+    <!-- Slide 5: Brute Bunny -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>03. Brute Bunny (野蠻兔)</h2>
+          <div class="slide-subtitle">BRUTE BUNNY // NOISE PHOBIA STRIKER</div>
+        </div>
+        <span class="danger-tag danger-medium">危險度 ★★★☆☆</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>高速衝刺重擊</strong>：手持重型鈍器直線快速追擊。</li>
+            <li><strong>兩下致命</strong>：傷害極高，貼身兩下即可擊殺玩家。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>特異聲學克制：大聲喧嘩！</strong></li>
+            <li><strong>麥克風嚇退法</strong>：發出大量聲音或麥克風持續大聲講話、尖叫，野蠻兔會受到驚嚇<strong>直接被嚇退逃跑</strong>。</li>
+            <li>在頻繁語音溝通的團隊面前，野蠻兔幾乎形同虛設。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>霰彈槍壓制</strong>：在退縮硬直中，<strong>3 發霰彈槍以內</strong> 可收走。</li>
+            <li><strong>語音控制鏈</strong>：一人開麥大叫吸引其猶豫，另一人持槍穩定輸出。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 如果你的團隊很吵很聒噪，野蠻兔就是一隻被動靶子；但若處於靜音摸黑潛行，務必小心其突襲！
+      </div>
+    </section>
+
+    <!-- Slide 6: Mama Monkey -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>04. Mama Monkey (猴子媽媽 / 抓猴哥)</h2>
+          <div class="slide-subtitle">MAMA MONKEY // FORMATION DISRUPTOR</div>
+        </div>
+        <span class="danger-tag danger-low">危險度 ★★☆☆☆</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>強行擒拿漫遊</strong>：抓住玩家在設施內四處遊蕩，或強行將玩家拖往撤離出口。</li>
+            <li><strong>抓人無傷害</strong>：純被抓狀態自身受到傷害為 0。</li>
+            <li><strong>武器化假人</strong>：若場上有假人被其抓到，它會把假人當武器重重敲擊玩家！</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>隊友普通敲 1 下即刻解救</strong>：同伴被抓時，任何隊友上前隨便敲它一下，它就會立刻鬆手放下玩家。</li>
+            <li><strong>出口搭便車（特殊情境）</strong>：如果正好想撤退，被它抓往出口有時反而是省耐力的順風車。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>霰彈槍</strong>：<strong>1 發直接擊斃</strong>。</li>
+            <li><strong>球棒</strong>：連續揮擊 <strong>3 下</strong> 即可收走。</li>
+            <li><strong>處置優先級</strong>：防止其抓取假人造成高傷威脅，實戰中建議「看到就直接扁」。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 雖然抓人無傷，但極容易把隊員分散拖入其他危險區域，務必保持團隊走位互保！
+      </div>
+    </section>
+
+    <!-- Slide 7: Quakka Glider -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>05. Quakka Glider (矮袋鼯鼠 / 沉默鼯鼠)</h2>
+          <div class="slide-subtitle">QUAKKA GLIDER // SILENCE & BLIND AMBUSH</div>
+        </div>
+        <span class="danger-tag danger-low">危險度 ★★☆☆☆ (連攜 ★★★★★)</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>無聲滑翔撲臉</strong>：從天花板無預警飛撲至玩家面部撒嬌。</li>
+            <li><strong>直接傷害為 0</strong>：無物理扣血，但造成嚴重的<strong>感官剝奪</strong>。</li>
+            <li><strong>黑屏 + 完全消音</strong>：遮擋受害者視野，且<strong>隊友完全聽不到受害者語音說話</strong>！</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>防範「炸彈魔連鎖」</strong>：鼯鼠撲臉讓你無法呼救，一旦此時炸彈魔逼近，你將化身無聲自爆引線！</li>
+            <li><strong>冷靜背靠牆壁</strong>：被撲臉後切忌盲跑，後退貼牆防止撞入陷阱。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>球棒精準 1 擊</strong>：體型極脆，<strong>球棒 1 下直接致死</strong>（需抓準滑翔停滯時機）。</li>
+            <li><strong>隊友互助</strong>：隊友看到某人突然啞巴且頭上有怪，立刻揮棒替其拍死。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 這隻鼯鼠的存在就是為了替【Bombesis 炸彈魔】鋪路的惡意設計，務必優先擊落！
+      </div>
+    </section>
+
+    <!-- Slide 8: Standing Owl -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>06. Standing Owl (站立的貓頭鷹 / 紳士貓頭鷹)</h2>
+          <div class="slide-subtitle">STANDING OWL // TERRITORIAL BLADE HURRICANE</div>
+        </div>
+        <span class="danger-tag danger-medium">危險度 ★★★☆☆</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>羽翼旋轉風暴</strong>：以自身為圓心高速旋轉羽翼利刃。</li>
+            <li><strong>一巴掌扇死</strong>：貼身範圍極高秒殺傷害，被扇到直接暴斃。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>「真正的紳士」</strong>：你不主動接觸它，它**完全不動、不追擊**！</li>
+            <li><strong>繞開走即可</strong>：保持 3 米以上安全間距直接跑過去，無需潛行或蹲伏。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>旋轉空窗硬直</strong>：靠近觸發其旋轉一次後，在下一次旋轉前有<strong>大量硬直空窗期</strong>。</li>
+            <li><strong>球棒反殺</strong>：在硬直期間上前用球棒揮擊 <strong>2 下</strong> 即死。</li>
+            <li><strong>霰彈槍</strong>：貼臉 <strong>1 發</strong> 秒殺。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 堵在窄門時才需要動手，否則請尊重這位紳士，直接擦肩而過即可。
+      </div>
+    </section>
+
+    <!-- Slide 9: Maegoostro -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>07. Maegoostro (莓戈斯特羅 / 沉默的指揮家)</h2>
+          <div class="slide-subtitle">MAEGOOSTRO // SILENCE ENFORCER</div>
+        </div>
+        <span class="danger-tag danger-low">危險度 ★★☆☆☆</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>指揮棒爆頭</strong>：感知到噪音後快步走近，持指揮棒猛敲頭部造成傷害。</li>
+            <li><strong>噪音狂暴</strong>：極度排斥說話聲與手持道具的金屬碰撞響聲。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>「Be quiet ! 請閉嘴，手上的東西也請安靜！」</strong></li>
+            <li><strong>絕對靜音通過</strong>：麥克風閉嘴、蹲下慢步前進，只要無聲，它視若無睹。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>全遊戲最脆實體之一</strong>：防禦低下，血量極薄。</li>
+            <li><strong>霰彈槍</strong>：直接正面 <strong>2 發散彈</strong> 收走。</li>
+            <li><strong>聒噪玩家解法</strong>：如果隊伍習慣頻繁語音報位，與其憋著不如直接兩槍轟殺。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 擊殺無獎勵，若全隊能配合閉嘴 5 秒，它是最容易無傷規避的怪物。
+      </div>
+    </section>
+
+    <!-- Slide 10: Heavy D -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>08. Heavy D (海維·D / DJ坦克)</h2>
+          <div class="slide-subtitle">HEAVY D // RESOURCE SINK TANK</div>
+        </div>
+        <span class="danger-tag danger-high">危險度 ★★★★☆</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>坦克重裝衝撞</strong>：直線超強衝刺，轟鳴震動。</li>
+            <li><strong>掉落物品 + 扣 50% 總血量</strong>：一擊將玩家身上所有物資強制擊飛散落一地，並造成巨量傷害。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>地形卡位風箏法</strong>：將其引導至地形複雜、狹窄多柱子或難以直線前進的死角。</li>
+            <li>趁其撞牆或轉身延遲時，立刻變向脫身逃跑。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>絕對不要反擊！</strong>：血量極其厚實，擊殺需要整整 <strong>6 發霰彈槍子彈</strong>！</li>
+            <li><strong>零回報黑洞</strong>：擊殺它<strong>沒有任何戰利品</strong>，攻擊它純屬浪費寶貴的求生彈藥。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 千萬不要跟它硬拼！利用掩體繞開它，把有限的子彈留給真正致命的哨兵。
+      </div>
+    </section>
+
+    <!-- Slide 11: Sentryper -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>09. Sentryper (哨兵 / 雙鐮怪)</h2>
+          <div class="slide-subtitle">SENTRYPER // WEEPING ANGEL ASSASSIN</div>
+        </div>
+        <span class="danger-tag danger-extreme">危險度 ★★★★★</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>雙鐮狂暴斬擊</strong>：如鬼魅般瞬身欺身。</li>
+            <li><strong>一刀必死</strong>：被其近身鐮刀砍中即刻死亡，毫無生還可能。</li>
+            <li><strong>狂暴反撲</strong>：受未致死攻擊會瞬間無視一切限制直接狂衝切碎攻擊者。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>泣天使凝視機制：眼神鎖死！</strong></li>
+            <li><strong>「用你炙熱的眼神注視著他！」</strong>：雙眼全程正面直視，它會被完全牽制無法瞬移。</li>
+            <li>維持視線接觸並慢慢倒退，直到退入門後迅速關門隔離。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>嚴禁近戰</strong>：打一下打不死它立刻反手一刀秒殺你！</li>
+            <li><strong>遠程高爆發</strong>：使用 <strong>霰彈槍遠距離射擊，2 發直接擊斃</strong>。</li>
+            <li><strong>雙人配合</strong>：一人正面死死盯住它使其定格，另一人從容側向開火擊斃。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 全遊戲最恐怖的殺手！絕對不要背對它，只要轉身哪怕半秒就是死刑。
+      </div>
+    </section>
+
+    <!-- Slide 12: Ramblam -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>10. Ramblam (雙槍羊)</h2>
+          <div class="slide-subtitle">RAMBLAM // DUMB GUNSLINGER</div>
+        </div>
+        <span class="danger-tag danger-low">危險度 ★★☆☆☆</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">⚡ 攻擊方式</div>
+          <ul>
+            <li><strong>衝刺後定點雙槍射擊</strong>：直線衝刺後停下，長前搖瞄準後射擊造成遠程傷害。</li>
+            <li><strong>AI 行動程序僵硬</strong>：缺乏隨機應變能力。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 避戰方式</div>
+          <ul>
+            <li><strong>調虎離山卡位法</strong>：若在撤離門口被它堵截，先往反方向開闊處跑，引誘其衝過來站穩瞄準。</li>
+            <li>當它原地站定舉起雙槍瞄準時，立刻變向全速衝向大門開門逃脫！</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">🎯 反擊方式</div>
+          <ul>
+            <li><strong>瞄準定格硬直是反殺天賜良機</strong>。</li>
+            <li>它在瞄準與射擊時完全無法移動，此時持球棒或槍械直接正面或繞後反殺，輕鬆拿下。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 看似拿雙槍很兇，實則笨拙單純，是給玩家製造極多逃跑與反殺機會的送分怪。
+      </div>
+    </section>
+
+    <!-- Slide 13: 聲學雙極機制專題 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>機制專題：聲學感知雙極對抗</h2>
+          <div class="slide-subtitle">MECHANICS // DUAL ACOUSTIC BEHAVIOR CONTRADICTION</div>
+        </div>
+        <span class="danger-tag danger-amber">機制深度解析</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header evasion">📢 恐懼巨響：Brute Bunny</div>
+          <ul>
+            <li><strong>神經脆弱</strong>：高分貝持續語音會判定為防衛威嚇。</li>
+            <li><strong>應對手段</strong>：開麥高聲聊天、持續呼叫，怪會主動逃逸。</li>
+            <li><strong>風險點</strong>：容易吸引對聲音敏感的攻擊型同伴。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header attack">🤫 厭惡噪音：Maegoostro</div>
+          <ul>
+            <li><strong>安靜秩序</strong>：對腳步、語音、開包金屬聲極端敏感。</li>
+            <li><strong>應對手段</strong>：全隊閉麥 5 秒，蹲姿擦肩而過。</li>
+            <li><strong>風險點</strong>：若被野蠻兔追擊時開麥，會直接激怒指揮家造成夾擊。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">💡 雙怪同場破解 SOP</div>
+          <ul>
+            <li><strong>優先級 1</strong>：指揮家極脆，持霰彈槍 <strong>2 發直接秒殺指揮家</strong>。</li>
+            <li><strong>優先級 2</strong>：解除噪音禁錮後，全隊立刻<strong>開麥咆哮嚇退野蠻兔</strong>。</li>
+            <li><strong>核心收益</strong>：僅耗費 2 發霰彈槍子彈即可瓦解雙怪死局。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>實測備註：</strong> 聲學機制的衝突是《謎魅狩獵》最精妙的博弈點，搞清楚當前房間的威脅屬性至關重要！
+      </div>
+    </section>
+
+    <!-- Slide 14: 惡意連攜解構 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>連攜解構：鼯鼠撲臉 + 炸彈自爆</h2>
+          <div class="slide-subtitle">SYNERGY ALERT // THE SILENT EXPLOSION COMBO</div>
+        </div>
+        <span class="danger-tag danger-extreme">團滅連鎖</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header attack">1. 鼯鼠遮面消音</div>
+          <ul>
+            <li>鼯鼠無聲滑翔撲臉。</li>
+            <li>受害隊員視野黑屏，語音頻道被強制靜音，無法向同伴報警。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header attack">2. 炸彈魔盲區逼近</div>
+          <ul>
+            <li>炸彈魔受玩家腳步吸引開始倒數。</li>
+            <li>急促的逼逼聲在狹小走廊迴盪，但受害者因失明而撞向自爆魔。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header counter">3. 隊友拯救拆解 SOP</div>
+          <ul>
+            <li><strong>觀察信號</strong>：一旦隊友突然閉麥且動作盲目亂轉，立刻上前一球棒敲死鼯鼠。</li>
+            <li><strong>聽音分流</strong>：聽見逼逼聲立刻全員後撤，絕不逗留。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>戰術教官警示：</strong> 不要以為傷害為 0 的小怪不可怕，鼯鼠的感官剝奪正是自爆魔收割全隊的最佳掩護！
+      </div>
+    </section>
+
+    <!-- Slide 15: 生存與彈藥守則 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrap">
+          <h2>戰術總結：生存與彈藥經濟守則</h2>
+          <div class="slide-subtitle">TACTICAL RECAP // BULLET ECONOMY & WINNING CONDITIONS</div>
+        </div>
+        <span class="danger-tag danger-green">教官總結</span>
+      </div>
+      <div class="tactical-grid">
+        <div class="t-card">
+          <div class="card-header counter">🎯 霰彈槍絕對優先級</div>
+          <ul>
+            <li><strong>等級 1（必打）</strong>：[[Sentryper 哨兵]]（2發）、近距離威脅的 [[Mimesis 假人]]（1發）。</li>
+            <li><strong>等級 2（選打）</strong>：狹道必經的 [[Bombesis 炸彈魔]]（1發）。</li>
+            <li><strong>等級 3（嚴禁打）</strong>：[[Heavy D 坦克]]（6發零收益，禁止浪費）。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header evasion">🛡️ 白嫖避戰優先級</div>
+          <ul>
+            <li><strong>野蠻兔</strong>：開麥說話直接嚇跑（0 子彈消耗）。</li>
+            <li><strong>指揮家</strong>：全隊閉嘴慢走擦身過（0 子彈消耗）。</li>
+            <li><strong>紳士貓頭鷹</strong>：3米外繞著走（0 子彈消耗）。</li>
+            <li><strong>哨兵</strong>：全程雙眼盯緊倒退開門（0 子彈消耗）。</li>
+          </ul>
+        </div>
+        <div class="t-card">
+          <div class="card-header attack">⚡ 團隊溝通與防武器複製</div>
+          <ul>
+            <li><strong>假人防武器複製</strong>：假人會複製玩家物品欄武器（非搶走手持武器），切莫讓帶有大殺器霰彈槍的隊員無防備近身！</li>
+            <li><strong>及時救援</strong>：猴子媽媽抓走隊友、鼯鼠遮面，隊友只需揮棒敲 1 下即可破局。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-note-box">
+        <strong>結語：</strong> 牢記《謎魅狩獵》的三大戰術維度——攻擊破綻、避戰智取、精準反殺，祝各位獵手全員生還歸來！
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Controls -->
+  <footer>
+    <div class="nav-buttons">
+      <button class="hud-btn" id="prev-btn">◀ 上一頁 [←]</button>
+      <button class="hud-btn" id="next-btn">下一頁 [→] ▶</button>
+      <button class="hud-btn" id="index-toggle">📑 速查索引</button>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+
+    <div class="counter-display" id="slide-counter">
+      SLIDE 01 / 15
+    </div>
+  </footer>
+
+  <!-- Drawer Menu -->
+  <aside id="index-drawer">
+    <div class="drawer-title">
+      <span>戰術投影片目錄</span>
+      <span style="cursor:pointer;" id="close-drawer">✕</span>
+    </div>
+    <div id="drawer-items"></div>
+  </aside>
+
+  <script>
+    (function() {
+      const slides = document.querySelectorAll('.slide');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      const progressFill = document.getElementById('progress-fill');
+      const slideCounter = document.getElementById('slide-counter');
+      const drawer = document.getElementById('index-drawer');
+      const indexToggle = document.getElementById('index-toggle');
+      const closeDrawer = document.getElementById('close-drawer');
+      const drawerItemsContainer = document.getElementById('drawer-items');
+
+      let currentSlide = 0;
+      const totalSlides = slides.length;
+
+      // Populate Quick Index Drawer
+      const slideTitles = [
+        "01. 戰術應對總綱",
+        "02. 全實體威脅矩陣",
+        "03. Mimesis 模仿者",
+        "04. Bombesis 炸彈魔",
+        "05. Brute Bunny 野蠻兔",
+        "06. Mama Monkey 猴子媽媽",
+        "07. Quakka Glider 矮袋鼯鼠",
+        "08. Standing Owl 紳士貓頭鷹",
+        "09. Maegoostro 沉默指揮家",
+        "10. Heavy D 海維·D",
+        "11. Sentryper 哨兵",
+        "12. Ramblam 雙槍羊",
+        "13. 機制：聲學雙極解析",
+        "14. 連攜：鼯鼠消音+炸彈",
+        "15. 總結：生存與彈藥守則"
+      ];
+
+      slideTitles.forEach((title, idx) => {
+        const item = document.createElement('div');
+        item.className = 'drawer-item' + (idx === 0 ? ' active' : '');
+        item.innerHTML = `<span>${title}</span><span class="kbd">${idx + 1}</span>`;
+        item.addEventListener('click', () => {
+          goToSlide(idx);
+          drawer.classList.remove('open');
+        });
+        drawerItemsContainer.appendChild(item);
+      });
+
+      function updateSlide() {
+        slides.forEach((slide, idx) => {
+          slide.classList.toggle('active', idx === currentSlide);
+        });
+
+        // Update progress bar
+        const progressPct = ((currentSlide + 1) / totalSlides) * 100;
+        progressFill.style.width = progressPct + '%';
+
+        // Update counter
+        const curPad = String(currentSlide + 1).padStart(2, '0');
+        const totalPad = String(totalSlides).padStart(2, '0');
+        slideCounter.textContent = `SLIDE ${curPad} / ${totalPad}`;
+
+        // Update drawer active status
+        const items = drawerItemsContainer.querySelectorAll('.drawer-item');
+        items.forEach((item, idx) => {
+          item.classList.toggle('active', idx === currentSlide);
+        });
+      }
+
+      function goToSlide(index) {
+        if (index >= 0 && index < totalSlides) {
+          currentSlide = index;
+          updateSlide();
+        }
+      }
+
+      function nextSlide() {
+        if (currentSlide < totalSlides - 1) {
+          currentSlide++;
+          updateSlide();
+        }
+      }
+
+      function prevSlide() {
+        if (currentSlide > 0) {
+          currentSlide--;
+          updateSlide();
+        }
+      }
+
+      // Event Listeners
+      prevBtn.addEventListener('click', prevSlide);
+      nextBtn.addEventListener('click', nextSlide);
+
+      indexToggle.addEventListener('click', () => {
+        drawer.classList.toggle('open');
+      });
+
+      closeDrawer.addEventListener('click', () => {
+        drawer.classList.remove('open');
+      });
+
+      // Keyboard Controls
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+          nextSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          prevSlide();
+        } else if (e.key.toLowerCase() === 'f') {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen().catch(() => {});
+          }
+        } else if (e.key === 'Escape') {
+          drawer.classList.remove('open');
+        }
+      });
+
+      updateSlide();
+    })();
+  </script>
+</body>
+</html>
